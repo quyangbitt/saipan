@@ -1,0 +1,38 @@
+name: Build Saipan installers
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Windows installer
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+        with:
+          path: packaging/windows/Saipan.iss
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Saipan-Windows
+          path: Output/Saipan-Setup.exe
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare macOS launcher
+        run: chmod +x packaging/macos/*.sh packaging/macos/*.command
+      - name: Build DMG
+        run: |
+          mkdir -p dist/Saipan.app/Contents/MacOS
+          cp -R . dist/Saipan.app/Contents/Resources
+          cp packaging/macos/launch.command dist/Saipan.app/Contents/MacOS/Saipan
+          chmod +x dist/Saipan.app/Contents/MacOS/Saipan
+          hdiutil create -volname Saipan -srcfolder dist/Saipan.app -ov -format UDZO dist/Saipan.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Saipan-macOS
+          path: dist/Saipan.dmg
